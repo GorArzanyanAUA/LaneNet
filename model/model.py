@@ -31,6 +31,7 @@ class LaneNet(nn.Module):
         return [binary_mask, binary_mask_logits, instance_seg_logits]
 
 
+
 def compute_loss(binary_mask_pt, instance_seg_logits_pt, binary_mask_gt, instance_seg_gt):
     """
     Consists of 2 parts:
@@ -55,7 +56,6 @@ def compute_loss(binary_mask_pt, instance_seg_logits_pt, binary_mask_gt, instanc
     var_loss, dist_loss = criterion_clustering(instance_seg_logits_pt, instance_seg_gt)
 
     total_loss = weighted_bce_loss + var_loss + dist_loss
-
 
     return weighted_bce_loss
 

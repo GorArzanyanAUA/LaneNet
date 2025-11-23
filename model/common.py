@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
 
 class DiscriminativeLoss(nn.Module):
     """
@@ -13,4 +14,12 @@ class DiscriminativeLoss(nn.Module):
 
     def forward(self, embedding_tensor, instance_labels):
         H, W, D = embedding_tensor.shape
+
+
+class LaneNetDataset(Dataset):
+    pass
+
+
+class LaneNetDataLoader(DataLoader):
+    pass
 
