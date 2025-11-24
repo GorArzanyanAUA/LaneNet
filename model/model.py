@@ -3,7 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model.common import DiscriminativeLoss
+from LaneNet.model.common import Encoder, BinarySegDecoder, InstanceSegDecoder
+from LaneNet.model.common import DiscriminativeLoss
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -19,9 +20,10 @@ class LaneNet(nn.Module):
     """
     def __init__(self):
         super(LaneNet, self).__init__()
-        self._encoder = None
-        self._binary_seg_decoder = None
-        self._instance_seg_decoder = None
+        self._encoder = Encoder()
+        self._binary_seg_decoder = BinarySegDecoder()
+        self._instance_seg_decoder = InstanceSegDecoder()
+        print("LaneNet initialized")
 
     def forward(self, x):
         encoded = self._encoder(x)

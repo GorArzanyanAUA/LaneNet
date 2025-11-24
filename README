@@ -1,0 +1,3 @@
+Pytorch implementation of the LaneNet Model.
+
+Following the implementation of the https://github.com/klintan/pytorch-lanenet/tree/master

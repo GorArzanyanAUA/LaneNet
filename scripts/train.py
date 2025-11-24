@@ -1,11 +1,12 @@
 import torch
-from model.model import LaneNet, compute_loss
-from model.common import LaneNetDataset, LaneNetDataLoader
 
+from LaneNet.model.model import LaneNet, compute_loss
+from LaneNet.model.common import TuSimpleLaneNetDataset, ReScaleTransform
+from torch.utils.data import DataLoader
 
 def train(model, batch, optimizer):
-    raise NotImplementedError("TO DO")
-
+    print()
+    print(len(batch))
 
 def main():
     # "argument parser can be added later"
@@ -16,21 +17,40 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     save_path = ".checkpoints/model.pth"
-    train_dataset_path = None
-    val_dataset_path = None
+    base_path = "/home/student/Dev/LaneNet/data/TUSimple/train_set"
+    train_dataset_path = "/home/student/Dev/LaneNet/data/TUSimple/train_set/seg_label/list/train_gt.txt"
+    val_dataset_path = "/home/student/Dev/LaneNet/data/TUSimple/train_set/seg_label/list/val_gt.txt"
 
-    train_dataset = LaneNetDataset(train_dataset_path, transform=None)
-    train_dataloader = LaneNetDataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    
-    val_dataset = LaneNetDataset(val_dataset_path, transform=None)
-    val_dataloader = LaneNetDataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    train_dataset = TuSimpleLaneNetDataset(base_path, train_dataset_path, transform=ReScaleTransform((512, 512)))    
+    val_dataset = TuSimpleLaneNetDataset(base_path, val_dataset_path, transform=ReScaleTransform((512, 512)))
+    train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-    model = LaneNet().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+    import matplotlib.pyplot as plt
 
-    for epoch in range(EPOCHS):
-        for batch in train_dataloader:
-            train(model, batch, optimizer)
+
+    for batch in train_dataloader:
+        print(len(batch))
+        fig = plt.figure(figsize=(10, 20))
+        fig.add_subplot(1,3,1)
+        plt.imshow(batch['image'][0].permute(1,2,0))
+        
+        fig.add_subplot(1,3,2)
+        plt.imshow(batch['binary_mask'][0])
+        
+        fig.add_subplot(1,3,3)
+        plt.imshow(batch['instance_mask'][0])
+        plt.show()
+        
+
+
+    # model = LaneNet()
+    # model.to(device)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+
+    # for epoch in range(EPOCHS):
+    #     for batch in train_dataloader:
+    #         train(model, batch, optimizer)
             
 
 
