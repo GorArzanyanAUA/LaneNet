@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
-import cv2
-
+import torch.nn.functional as F
 
 import os
 import numpy as np
@@ -373,14 +372,54 @@ class RegularBottlneck(nn.Module):
 class DiscriminativeLoss(nn.Module):
     """
     Implementation of the discriminative loss with two terms.
+    Using L2 norm
     """
     def __init__(self, delta_v, delta_d):
-        self.delta_v = delta_v
-        self.delta_d = delta_d
-        raise NotImplemented()
+        super(DiscriminativeLoss, self).__init__()
+        self.delta_v = delta_v   # Variance term is activated only when is bigger than this
+        self.delta_d = delta_d   # Distance term is activated only when is smaller than this
 
     def forward(self, embedding_tensor, instance_labels):
-        H, W, D = embedding_tensor.shape
+        B, C, H, W = embedding_tensor.shape
+        var_loss = torch.tensor(0, dtype=embedding_tensor.dtype, device=embedding_tensor.device)
+        dist_loss = torch.tensor(0, dtype=embedding_tensor.dtype, device=embedding_tensor.device)
+        reg_loss = torch.tensor(0, dtype=embedding_tensor.dtype, device=embedding_tensor.device)
+        for b in range(B):
+            embedding = embedding_tensor[b]
+            label_gt = instance_labels[b]
+            labels = torch.unique(label_gt) # list tensor of unique elements
+            labels = labels[labels!=0]   # same without element with value 0
+            num_lanes = len(labels)
+            if num_lanes == 0:
+                # TODO
+                continue
+
+            # compute gt centroid means
+            centroid_mean = []
+            for lane_idx in labels:
+                seg_mask_i = (label_gt == lane_idx).to(device="cuda")  # binary mask for that lane 
+                if not seg_mask_i.any():
+                    continue
+                masked_values = embedding[:, seg_mask_i]
+                mean_i = torch.mean(masked_values, dim=1, keepdim=True)
+                centroid_mean.append(mean_i)
+                dists = torch.norm(masked_values - mean_i, dim=0)
+                var_loss += torch.mean(F.relu(dists -self.delta_v) ** 2)
+
+            var_loss = var_loss / num_lanes
+            centroid_mean = torch.stack(centroid_mean).squeeze(2)
+            if num_lanes > 1:
+                centroid_mean1 = centroid_mean.reshape(-1, 1, C)
+                centroid_mean2 = centroid_mean.reshape(1, -1, C)
+                dist = torch.norm(centroid_mean1 - centroid_mean2, dim=2)
+                dist = dist + torch.eye(num_lanes, dtype=dist.dtype, device=dist.device) * self.delta_d
+                dist_loss += torch.sum(F.relu(self.delta_d - dist) ** 2)
+            
+            dist_loss = dist_loss / (2 * num_lanes * (num_lanes - 1))
+
+        var_loss = var_loss / B
+        dist_loss = dist_loss / B
+        return var_loss, dist_loss
 
 if __name__ == "__main__":
     dataset = TuSimpleLaneNetDataset("/home/student/Dev/LaneNet/data/TUSimple/train_set", "/home/student/Dev/LaneNet/data/TUSimple/train_set/seg_label/list/train_val_gt.txt")

@@ -47,7 +47,7 @@ def compute_loss(binary_mask_logits, instance_seg_logits_pt, binary_mask_gt, ins
     delta_v = 0.5
     delta_d = 3.0
 
-    # Weighter BCE loss
+    # Weighted BCE loss
     pos_fraction = binary_mask_gt.mean()
     neg_fraction = 1 - pos_fraction
     pos_weight = 1 / (pos_fraction + 1e-6)
@@ -56,16 +56,11 @@ def compute_loss(binary_mask_logits, instance_seg_logits_pt, binary_mask_gt, ins
     bce_loss = criterion_bce(binary_mask_logits, binary_mask_gt)
     weights = binary_mask_gt * pos_weight + (1-binary_mask_gt) * neg_weight
     weighted_bce_loss = (bce_loss * weights).mean()    
-    print(weighted_bce_loss)
 
     # Discriminative Loss
     criterion_clustering = DiscriminativeLoss(delta_v, delta_d)
     var_loss, dist_loss = criterion_clustering(instance_seg_logits_pt, instance_seg_gt)
-
-    total_loss = weighted_bce_loss + var_loss + dist_loss
-
-    return weighted_bce_loss
-# 
+    return weighted_bce_loss, var_loss, dist_loss
 
 if __name__=="__main__":
     # pass
