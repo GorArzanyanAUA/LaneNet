@@ -6,8 +6,8 @@ This project implements the LaneNet architecture using PyTorch for road lane lin
 To build and train a PyTorch-based model capable of detecting lane markings in real road scenarios using the TuSimple dataset, following the LaneNet architecture and related encoder-decoder designs.
 
 ## Preliminary Results
-![Example 1]()
-![Example 2]()
+![Example 1](results/Figure_1.png)
+![Example 2](results/Figure_2.png)
 
 
 ## References and Sources
